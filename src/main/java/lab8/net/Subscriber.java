@@ -7,8 +7,8 @@ import java.io.*;
 import java.net.Socket;
 
 /**
- * Client‑side loop: sends local paddle location to the server,
- * receives full world snapshot, applies it, 30 fps.
+ * Client‑side loop: sends local paddle position, receives full snapshot.
+ * Start it with:  mvn exec:java -Dexec.mainClass="lab8.net.Subscriber"
  */
 public class Subscriber implements Runnable {
 
@@ -29,20 +29,23 @@ public class Subscriber implements Runnable {
     public boolean isReady() { return ready; }
 
     @Override public void run() {
-        while (true) {
+        while (!Thread.currentThread().isInterrupted()) {
             try {
                 Thread.sleep(1000 / 30);
                 receive();
                 send();
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
-                break;
-            } catch (Exception e) { e.printStackTrace(); }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
+    /* ------------------------------------------------------------------ */
+
     private void send() throws IOException {
-        out.writeObject(Game.get().snapshot());   // local paddle included
+        out.writeObject(Game.get().snapshot());
         out.flush();
     }
 
@@ -50,6 +53,20 @@ public class Subscriber implements Runnable {
         try {
             DataRepository snap = (DataRepository) in.readObject();
             Game.get().applySnapshot(snap);
-        } catch (Exception e) { /* ignore for now */ }
+        } catch (Exception ignored) {}
+    }
+
+    /* ------------------------------------------------------------------ */
+    /** Convenience launcher for “mvn exec:java …” */
+    public static void main(String[] args) {
+        try {
+            Subscriber sub = new Subscriber();
+            if (sub.isReady()) {
+                new Thread(sub, "Subscriber-Thread").start();
+                System.out.println("Subscriber connected to " + HOST + ':' + PORT);
+            }
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
     }
 }

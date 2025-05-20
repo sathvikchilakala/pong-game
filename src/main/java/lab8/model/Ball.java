@@ -2,12 +2,12 @@ package lab8.model;
 
 import java.io.Serializable;
 
-/** Ball position + simple horizontal motion. */
+
 public class Ball implements Serializable {
 
-    private int x, y;       // centre coordinates
-    private int dx = 10;    // horizontal velocity (pixels / tick)
-    private int dy = 0;     // vertical velocity (unused for now)
+    private int x, y;      
+    private int dx = 10;   
+    private int dy = 0;  
 
     public Ball(int cx, int cy) { x = cx; y = cy; }
 

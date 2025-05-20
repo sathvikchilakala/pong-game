@@ -1,8 +1,5 @@
 package lab8.model;
 
-/**
- * Constants that describe the play‑field and common role / direction ids.
- */
 public interface Field {
 
     int WIDTH  = 800;
