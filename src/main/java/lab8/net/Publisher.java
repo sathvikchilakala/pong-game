@@ -14,40 +14,50 @@ public class Publisher implements Runnable {
 
     private final ObjectOutputStream out;
     private final ObjectInputStream  in;
-    private volatile boolean ready;
 
-    public Publisher() throws IOException {
-        ServerSocket ss = new ServerSocket(PORT);
-        Socket client   = ss.accept();
-        out   = new ObjectOutputStream(client.getOutputStream());
-        in    = new ObjectInputStream(client.getInputStream());
-        ready = true;
+    private Publisher(ServerSocket ss) throws IOException {
+        Socket client = ss.accept();
+        out = new ObjectOutputStream(client.getOutputStream());
+        in  = new ObjectInputStream(client.getInputStream());
     }
 
-    public boolean isReady() { return ready; }
-
-    @Override public void run() {
-        while (!Thread.currentThread().isInterrupted()) {
-            try {
-                Thread.sleep(1000 / 30);      // 30 fps
-                send();
-                receive();
-                Game.get().tick();
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+    private static Publisher create() throws IOException {
+        try (ServerSocket ss = new ServerSocket(PORT)) {
+            System.out.println("Publisher listening on port " + PORT + " …");
+            return new Publisher(ss);     
         }
     }
 
 
-    private void send() throws IOException {
+    @Override public void run() {
+        try {                       
+            gameLoop();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void gameLoop() throws IOException {
+        while (!Thread.currentThread().isInterrupted()) {
+            try {
+                Thread.sleep(1000 / 60); 
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+            sendSnapshot();
+            receiveSnapshot();
+            Game.get().tick();
+        }
+    }
+
+
+    private void sendSnapshot() throws IOException {
         out.writeObject(Game.get().snapshot());
         out.flush();
     }
 
-    private void receive() {
+    private void receiveSnapshot() {
         try {
             DataRepository snap = (DataRepository) in.readObject();
             Game.get().applySnapshot(snap);
@@ -57,11 +67,8 @@ public class Publisher implements Runnable {
 
     public static void main(String[] args) {
         try {
-            Publisher pub = new Publisher();
-            if (pub.isReady()) {
-                new Thread(pub, "Publisher-Thread").start();
-                System.out.println("Publisher running on port " + PORT);
-            }
+            Publisher pub = Publisher.create();
+            new Thread(pub, "Publisher-Thread").start();
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }

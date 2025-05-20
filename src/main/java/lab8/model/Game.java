@@ -21,6 +21,10 @@ public final class Game implements Field {
         return INSTANCE;
     }
 
+    public DataRepository getState() {  
+        return state;
+    }
+
     public void tick() { moveBall(); }
 
 

@@ -4,4 +4,6 @@ lab8/model/Game.class
 lab8/model/Field.class
 lab8/ui/Fans.class
 lab8/net/Publisher.class
+lab8/ui/PongPanel.class
+lab8/ui/ClientApp.class
 lab8/model/Ball.class
